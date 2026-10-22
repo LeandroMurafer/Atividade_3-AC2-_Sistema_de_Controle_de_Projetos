@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Projetos</title>
+  <style>
+    :root {
+      --paper: #eef1f5;
+      --panel: #ffffff;
+      --ink: #14213d;
+      --ink-soft: #4b5873;
+      --line: #d5dbe5;
+      --run: #0f766e;
+      --run-soft: #ccebe7;
+      --plan: #3b5bdb;
+      --done: #8a96ad;
+      --today: #c2410c;
+      --danger: #b42318;
+      --danger-bg: #fdeceb;
+      --radius: 6px;
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); line-height: 1.5; }
+    button, input, textarea { font: inherit; color: inherit; }
+    :focus-visible { outline: 3px solid var(--plan); outline-offset: 2px; }
+
+    .page { max-width: 1040px; margin: 0 auto; padding: 40px 20px 72px; }
+
+    .topo { display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; }
+    h1 { margin: 0; font-size: 2.4rem; line-height: 1.1; letter-spacing: -0.02em; font-weight: 700; }
+    .resumo { margin: 6px 0 0; color: var(--ink-soft); }
+    .btn { border: 0; border-radius: var(--radius); background: var(--ink); color: #fff; padding: 11px 20px; cursor: pointer; font-weight: 600; }
+    .btn:hover { background: #22345f; }
+    .btn-claro { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+    .btn-claro:hover { background: var(--paper); }
+
+    .linha-do-tempo { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px 8px; }
+
+    .projeto { padding: 14px 0; border-bottom: 1px solid var(--line); }
+    .projeto:last-child { border-bottom: 0; }
+    .cabeca { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; width: 100%; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; }
+    .nome { font-weight: 650; font-size: 1.05rem; }
+    .estado { font-size: .84rem; font-weight: 600; }
+    .estado.andamento { color: var(--run); }
+    .estado.planejado { color: var(--plan); }
+    .estado.concluido { color: var(--ink-soft); }
+    .datas { margin-left: auto; font-size: .86rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+
+    .detalhe { display: none; margin-top: 12px; padding: 12px 14px; background: var(--paper); border-radius: var(--radius); font-size: .93rem; }
+    .projeto.aberto .detalhe { display: block; }
+    .detalhe p { margin: 0 0 8px; }
+    .equipe { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+    .equipe li { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 2px 12px; font-size: .86rem; }
+    .sem-equipe { color: var(--ink-soft); }
+
+
+    .vazio, .falha { padding: 36px 8px; text-align: center; color: var(--ink-soft); }
+    .vazio strong, .falha strong { display: block; color: var(--ink); font-size: 1.05rem; margin-bottom: 4px; }
+    .aviso { min-height: 24px; margin: 0 0 12px; font-weight: 600; color: var(--run); }
+
+    dialog { width: min(440px, 100%); max-height: 100%; height: 100%; margin: 0 0 0 auto; border: 0; padding: 0; background: var(--panel); color: var(--ink); box-shadow: -12px 0 40px rgba(20,33,61,.25); }
+    dialog::backdrop { background: rgba(20,33,61,.45); }
+    .painel { display: flex; flex-direction: column; height: 100%; padding: 28px 26px; overflow-y: auto; }
+    .painel h2 { margin: 0 0 20px; font-size: 1.5rem; letter-spacing: -0.01em; }
+    label { display: block; margin-bottom: 16px; font-weight: 600; font-size: .92rem; }
+    label small { font-weight: 400; color: var(--ink-soft); }
+    input, textarea { display: block; width: 100%; margin-top: 6px; padding: 10px 12px; border: 1px solid #aeb8c9; border-radius: var(--radius); background: #fff; font-weight: 400; }
+    textarea { resize: vertical; min-height: 84px; }
+    .datas-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .erro { display: none; margin-bottom: 16px; padding: 10px 14px; border-left: 4px solid var(--danger); background: var(--danger-bg); color: var(--danger); font-weight: 600; border-radius: 0 var(--radius) var(--radius) 0; }
+    .erro.visivel { display: block; }
+    .acoes { display: flex; gap: 10px; margin-top: auto; padding-top: 12px; }
+
+    @media (max-width: 560px) {
+      h1 { font-size: 1.9rem; }
+      .datas { margin-left: 0; width: 100%; }
+      .datas-form { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      dialog[open] { animation: entra .22s ease-out; }
+      @keyframes entra { from { transform: translateX(32px); opacity: 0; } to { transform: none; opacity: 1; } }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topo">
+      <div>
+        <h1>Projetos</h1>
+        <p class="resumo" id="resumo">Carregando…</p>
+      </div>
+      <button class="btn" id="abrir" type="button">Novo projeto</button>
+    </header>
+
+    <p class="aviso" id="aviso" role="status" aria-live="polite"></p>
+
+    <section class="linha-do-tempo" aria-label="Lista de projetos">
+      <div id="conteudo"></div>
+    </section>
+  </main>
+
+  <dialog id="painel" aria-labelledby="titulo-painel">
+    <form class="painel" id="form" method="dialog" novalidate>
+      <h2 id="titulo-painel">Novo projeto</h2>
+      <div class="erro" id="erro" role="alert"></div>
+
+      <label>Nome
+        <input type="text" id="nome" maxlength="150" required autocomplete="off">
+      </label>
+      <label>Descrição <small>(opcional)</small>
+        <textarea id="descricao" maxlength="500"></textarea>
+      </label>
+      <div class="datas-form">
+        <label>Início
+          <input type="date" id="dataInicio" required>
+        </label>
+        <label>Fim <small>(opcional)</small>
+          <input type="date" id="dataFim">
+        </label>
+      </div>
+
+      <div class="acoes">
+        <button class="btn" type="submit" id="salvar">Salvar projeto</button>
+        <button class="btn btn-claro" type="button" id="cancelar">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const API = '/projetos';
+    const $ = (id) => document.getElementById(id);
+
+    function tempo(iso) {
+      const [a, m, d] = iso.split('-').map(Number);
+      return Date.UTC(a, m - 1, d);
+    }
+    function hojeUTC() {
+      const n = new Date();
+      return Date.UTC(n.getFullYear(), n.getMonth(), n.getDate());
+    }
+    function formatar(iso) {
+      const [a, m, d] = iso.split('-');
+      return `${d}/${m}/${a}`;
+    }
+    function escapar(texto) {
+      const el = document.createElement('div');
+      el.textContent = texto ?? '';
+      return el.innerHTML;
+    }
+    function estadoDe(p, hoje) {
+      if (tempo(p.dataInicio) > hoje) return ['planejado', 'Planejado'];
+      if (p.dataFim && tempo(p.dataFim) < hoje) return ['concluido', 'Concluído'];
+      return ['andamento', 'Em andamento'];
+    }
+    function plural(n, um, varios) {
+      return `${n} ${n === 1 ? um : varios}`;
+    }
+
+    function desenhar(projetos) {
+      const conteudo = $('conteudo');
+      const hoje = hojeUTC();
+
+      if (projetos.length === 0) {
+        $('resumo').textContent = 'Nenhum projeto cadastrado.';
+        conteudo.innerHTML = '<div class="vazio"><strong>Nenhum projeto por aqui</strong>Use "Novo projeto" para cadastrar o primeiro.</div>';
+        return;
+      }
+
+      const emAndamento = projetos.filter(p => estadoDe(p, hoje)[0] === 'andamento').length;
+      $('resumo').textContent = `${plural(projetos.length, 'projeto', 'projetos')} no total, ${emAndamento} em andamento.`;
+
+      const linhas = projetos.map(p => {
+        const [classe, rotulo] = estadoDe(p, hoje);
+        const periodo = p.dataFim
+          ? `${formatar(p.dataInicio)} a ${formatar(p.dataFim)}`
+          : `desde ${formatar(p.dataInicio)}, sem data de fim`;
+        const equipe = p.funcionarios.length
+          ? `<ul class="equipe">${p.funcionarios.map(f => `<li>${escapar(f.nome)}</li>`).join('')}</ul>`
+          : '<span class="sem-equipe">Nenhum funcionário vinculado.</span>';
+
+        return `
+          <article class="projeto">
+            <button class="cabeca" type="button" aria-expanded="false">
+              <span class="nome">${escapar(p.nome)}</span>
+              <span class="estado ${classe}">${rotulo}</span>
+              <span class="datas">${periodo}</span>
+            </button>
+            <div class="detalhe">
+              <p>${p.descricao ? escapar(p.descricao) : 'Sem descrição.'}</p>
+              ${equipe}
+            </div>
+          </article>`;
+      }).join('');
+
+      conteudo.innerHTML = linhas;
+    }
+
+    $('conteudo').addEventListener('click', (ev) => {
+      const botao = ev.target.closest('.cabeca');
+      if (!botao) return;
+      const item = botao.closest('.projeto');
+      const aberto = item.classList.toggle('aberto');
+      botao.setAttribute('aria-expanded', String(aberto));
+    });
+
+    async function carregar() {
+      try {
+        const resp = await fetch(API);
+        if (!resp.ok) throw new Error();
+        desenhar(await resp.json());
+      } catch (e) {
+        $('resumo').textContent = 'Não foi possível carregar os projetos.';
+        $('conteudo').innerHTML = '<div class="falha"><strong>A lista não carregou</strong>Confira se o servidor está no ar e <button class="btn btn-claro" type="button" id="tentar">tente de novo</button></div>';
+        $('tentar').addEventListener('click', carregar);
+      }
+    }
+
+    const painel = $('painel');
+    const erro = $('erro');
+
+    function mostrarErro(texto) {
+      erro.textContent = texto;
+      erro.classList.add('visivel');
+    }
+
+    $('abrir').addEventListener('click', () => {
+      $('form').reset();
+      erro.classList.remove('visivel');
+      painel.showModal();
+      $('nome').focus();
+    });
+    $('cancelar').addEventListener('click', () => painel.close());
+
+    $('form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      erro.classList.remove('visivel');
+      const corpo = {
+        nome: $('nome').value,
+        descricao: $('descricao').value || null,
+        dataInicio: $('dataInicio').value,
+        dataFim: $('dataFim').value || null
+      };
+      const salvar = $('salvar');
+      salvar.disabled = true;
+      try {
+        const resp = await fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(corpo)
+        });
+        if (!resp.ok) {
+          const dados = await resp.json().catch(() => ({}));
+          mostrarErro(dados.mensagem || 'Não foi possível salvar o projeto. Tente de novo.');
+          return;
+        }
+        painel.close();
+        $('aviso').textContent = 'Projeto salvo.';
+        setTimeout(() => { $('aviso').textContent = ''; }, 5000);
+        carregar();
+      } catch (e) {
+        mostrarErro('Sem conexão com o servidor. Confira se ele está no ar e tente de novo.');
+      } finally {
+        salvar.disabled = false;
+      }
+    });
+
+    carregar();
+  </script>
+</body>
+</html>

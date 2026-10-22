@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestão de Projetos</title>
+  <style>
+    :root {
+      --bg: #f4f6fa; --card: #fff; --text: #1f2937; --muted: #6b7280;
+      --primary: #2563eb; --primary-dark: #1d4ed8; --border: #e5e7eb;
+      --ok: #166534; --ok-bg: #dcfce7; --err: #991b1b; --err-bg: #fee2e2;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+    header { background: var(--primary); color: #fff; padding: 18px 24px; }
+    header h1 { margin: 0; font-size: 1.3rem; }
+    main { max-width: 1000px; margin: 24px auto; padding: 0 16px; display: grid; gap: 20px; }
+    section { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+    h2 { margin: 0 0 14px; font-size: 1.05rem; }
+    form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; align-items: end; }
+    label { display: grid; gap: 4px; font-size: .85rem; color: var(--muted); }
+    input, textarea { font: inherit; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; color: var(--text); }
+    input:focus, textarea:focus { outline: 2px solid #bfdbfe; border-color: var(--primary); }
+    .full { grid-column: 1 / -1; }
+    button { font: inherit; background: var(--primary); color: #fff; border: 0; border-radius: 6px; padding: 10px 18px; cursor: pointer; }
+    button:hover { background: var(--primary-dark); }
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; }
+    .chip { display: inline-block; background: #eff6ff; color: var(--primary-dark); border-radius: 999px; padding: 2px 10px; margin: 2px 4px 2px 0; font-size: .8rem; }
+    .vazio { color: var(--muted); font-style: italic; }
+    #mensagem { display: none; padding: 10px 14px; border-radius: 6px; font-size: .9rem; }
+    #mensagem.ok { display: block; background: var(--ok-bg); color: var(--ok); }
+    #mensagem.erro { display: block; background: var(--err-bg); color: var(--err); }
+    .linha-titulo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .linha-titulo h2 { margin: 0; }
+    .secundario { background: #fff; color: var(--primary); border: 1px solid var(--primary); padding: 6px 12px; font-size: .85rem; }
+    .secundario:hover { background: #eff6ff; }
+  </style>
+</head>
+<body>
+  <header><h1>Gestão de Projetos</h1></header>
+
+  <main>
+    <div id="mensagem" role="status"></div>
+
+    <section>
+      <h2>Novo projeto</h2>
+      <form id="form-projeto">
+        <label class="full">Nome *
+          <input type="text" id="nome" maxlength="150" required>
+        </label>
+        <label class="full">Descrição
+          <textarea id="descricao" rows="2" maxlength="500"></textarea>
+        </label>
+        <label>Data de início *
+          <input type="date" id="dataInicio" required>
+        </label>
+        <label>Data de fim
+          <input type="date" id="dataFim">
+        </label>
+        <div><button type="submit">Cadastrar projeto</button></div>
+      </form>
+    </section>
+
+    <section>
+      <div class="linha-titulo">
+        <h2>Projetos cadastrados</h2>
+        <button type="button" class="secundario" id="btn-atualizar">Atualizar</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Nome</th><th>Descrição</th><th>Início</th><th>Fim</th><th>Funcionários</th></tr>
+        </thead>
+        <tbody id="tabela"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const API = '/projetos';
+    const $ = (id) => document.getElementById(id);
+
+    function mostrarMensagem(texto, tipo) {
+      const el = $('mensagem');
+      el.textContent = texto;
+      el.className = tipo;
+      clearTimeout(mostrarMensagem.t);
+      mostrarMensagem.t = setTimeout(() => { el.className = ''; }, 5000);
+    }
+
+    function formatarData(iso) {
+      if (!iso) return '—';
+      const [a, m, d] = iso.split('-');
+      return `${d}/${m}/${a}`;
+    }
+
+    function escapar(texto) {
+      const div = document.createElement('div');
+      div.textContent = texto ?? '';
+      return div.innerHTML;
+    }
+
+    async function carregarProjetos() {
+      const tbody = $('tabela');
+      try {
+        const resp = await fetch(API);
+        if (!resp.ok) throw new Error('Falha ao carregar projetos.');
+        const projetos = await resp.json();
+
+        if (projetos.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="vazio">Nenhum projeto cadastrado.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = projetos.map(p => `
+          <tr>
+            <td>${p.id}</td>
+            <td><strong>${escapar(p.nome)}</strong></td>
+            <td>${escapar(p.descricao) || '—'}</td>
+            <td>${formatarData(p.dataInicio)}</td>
+            <td>${formatarData(p.dataFim)}</td>
+            <td>${p.funcionarios.length
+                  ? p.funcionarios.map(f => `<span class="chip">${escapar(f.nome)}</span>`).join('')
+                  : '<span class="vazio">Nenhum</span>'}</td>
+          </tr>`).join('');
+      } catch (e) {
+        mostrarMensagem(e.message, 'erro');
+      }
+    }
+
+    $('form-projeto').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const corpo = {
+        nome: $('nome').value,
+        descricao: $('descricao').value || null,
+        dataInicio: $('dataInicio').value,
+        dataFim: $('dataFim').value || null
+      };
+      try {
+        const resp = await fetch(API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(corpo)
+        });
+        if (!resp.ok) {
+          const erro = await resp.json().catch(() => ({}));
+          throw new Error(erro.mensagem || 'Não foi possível cadastrar o projeto.');
+        }
+        ev.target.reset();
+        mostrarMensagem('Projeto cadastrado com sucesso!', 'ok');
+        carregarProjetos();
+      } catch (e) {
+        mostrarMensagem(e.message, 'erro');
+      }
+    });
+
+    $('btn-atualizar').addEventListener('click', carregarProjetos);
+    carregarProjetos();
+  </script>
+</body>
+</html>
