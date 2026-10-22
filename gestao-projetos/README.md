@@ -51,3 +51,9 @@ curl 'localhost:8080/projetos/periodo?inicio=2026-01-01&fim=2026-06-30'
 - Setor com nome único; funcionário com e-mail único (422).
 - Funcionário não pode ser vinculado duas vezes ao mesmo projeto (422).
 - Recurso inexistente retorna 404; dados inválidos retornam 400 com a mensagem em `mensagem`.
+
+<img width="1437" height="809" alt="image" src="https://github.com/user-attachments/assets/7e1a6da4-af1a-45d8-9235-8ccc4be292f4" />
+
+<img width="1439" height="763" alt="image" src="https://github.com/user-attachments/assets/8714f32f-7d81-4812-a408-8c5cf9a557e8" />
+
+
